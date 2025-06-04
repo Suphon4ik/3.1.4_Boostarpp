@@ -15,7 +15,5 @@ public interface RoleService {
     public List<Role> getAllRoles();
 
     public List<Role> findRolesByIds(List<Long> roleIds);
-
-
 }
 

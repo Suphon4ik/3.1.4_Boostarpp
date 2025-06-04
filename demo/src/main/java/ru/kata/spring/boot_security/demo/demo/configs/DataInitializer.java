@@ -1,5 +1,6 @@
 package ru.kata.spring.boot_security.demo.demo.configs;
 
+import jakarta.transaction.Transactional;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,11 +9,20 @@ import ru.kata.spring.boot_security.demo.demo.model.Role;
 import ru.kata.spring.boot_security.demo.demo.model.User;
 import ru.kata.spring.boot_security.demo.demo.repositories.RoleRepository;
 import ru.kata.spring.boot_security.demo.demo.repositories.UserRepository;
+import ru.kata.spring.boot_security.demo.demo.service.RoleService;
+import ru.kata.spring.boot_security.demo.demo.service.UserService;
 
 import java.util.Set;
 @Configuration
 public class DataInitializer {
 
+    private final UserService userService;
+    private final RoleService roleService;
+
+    public DataInitializer(UserService userService, RoleService roleService) {
+        this.userService = userService;
+        this.roleService = roleService;
+    }
 
     @Bean
     public ApplicationRunner initData(UserRepository userRepository
@@ -21,7 +31,8 @@ public class DataInitializer {
         return args -> initializeData(userRepository, roleRepository, passwordEncoder);
     }
 
-    private void initializeData(UserRepository userRepository
+    @Transactional
+    protected void initializeData(UserRepository userRepository
             , RoleRepository roleRepository
             , PasswordEncoder passwordEncoder) {
 
@@ -41,7 +52,7 @@ public class DataInitializer {
             admin.setRoles(Set.of(adminRole, userRole));
             admin.setCar("Lada Vesta");
             admin.setCountry("United States");
-            userRepository.save(admin);
+            userRepository.saveUser(admin);
         }
         if (userRepository.findByUsername("user").isEmpty()) {
             User user = new User();
@@ -50,7 +61,7 @@ public class DataInitializer {
             user.setRoles(Set.of(userRole));
             user.setCar("Lada Granta");
             user.setCountry("Germany");
-            userRepository.save(user);
+            userRepository.saveUser(user);
         }
     }
 }

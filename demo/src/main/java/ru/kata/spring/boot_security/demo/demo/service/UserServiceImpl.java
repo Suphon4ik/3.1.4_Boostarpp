@@ -1,6 +1,5 @@
 package ru.kata.spring.boot_security.demo.demo.service;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,6 +9,7 @@ import ru.kata.spring.boot_security.demo.demo.repositories.UserRepository;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -17,27 +17,30 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final RoleService roleService;
 
-    @Autowired
     public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, RoleService roleService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.roleService = roleService;
     }
+
     @Transactional
     @Override
-    public User getUserById(Long id) {
-        return userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+    public Optional<User> getUserById(Long id) {
+        return Optional.ofNullable(userRepository.getUserById(id).orElseThrow(() -> new RuntimeException("User not found")));
     }
+
     @Transactional
     @Override
-    public User findByUsername(String name) {
-        return userRepository.findByUsername(name).orElse(null);
+    public Optional<User> findByUsername(String name) {
+        return Optional.ofNullable(userRepository.findByUsername(name).orElse(null));
     }
+
     @Transactional
     @Override
     public List<User> getAllUsers() {
-        return userRepository.findAll();
+        return userRepository.getAllUsers();
     }
+
     @Transactional
     @Override
     public void saveUser(User user) {
@@ -47,24 +50,24 @@ public class UserServiceImpl implements UserService {
 
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
             user.setPassword(passwordEncoder.encode(user.getPassword()));
-            userRepository.save(user);
+            userRepository.saveUser(user);
         }
     }
     @Transactional
     @Override
     public void deleteUser(Long id) {
-        User user = userRepository.findById(id)
+        User user = userRepository.getUserById(id)
                 .orElseThrow(() -> new IllegalStateException("User with id " + id + " not found"));
         if (user.getRoles().stream().anyMatch(role -> role.getName().equals("ROLE_ADMIN"))) {
             throw new IllegalStateException("Нельзя удалить администратора!");
         }
-        userRepository.delete(user);
+        userRepository.deleteUser(user.getId());
     }
 
     @Transactional
     @Override
     public void updateUser(Long id, User user, List<Long> roleIds) {
-        User existingUser = userRepository.findById(id)
+        User existingUser = userRepository.getUserById(id)
                 .orElseThrow(() -> new IllegalStateException("User with id " + id + " not found"));
 
         boolean isAdmin = existingUser.getRoles().stream()
@@ -93,7 +96,7 @@ public class UserServiceImpl implements UserService {
             existingUser.setRoles(new HashSet<>(roles));
         } else {
         }
-        userRepository.save(existingUser);
+        userRepository.saveUser(existingUser);
     }
 }
 
